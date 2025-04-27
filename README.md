@@ -13,8 +13,8 @@ This repo is the trainer of spatio-temporal point processes
 - configs: a directory where configuration files are stored
 - train_mstpp_hawkes.py: train STNHP Hawkes process model
 
-## easy_stpp
-This repo contains updated library for training spatio-temporal point processes from easy_tpp.
+## easy_tpp
+This repo contains updated library for training spatio-temporal point processes.
 
 - torch_wrapper.py: torch wrapper for spatio-temporal point processes
 - model/torch_model/torch_stnhp.py: torch model for spatio-temporal neural Hawkes processes.
