@@ -32,3 +32,13 @@ This repo contains updated library for training spatio-temporal point processes.
 ## easy_tpp.zip
 
 - Contains the whole updated library for training spatio-temporal point processes from easy_tpp.
+
+## Quickstart
+
+```bash
+python train_mstnhp/train_mstpp_hawkes.py
+```
+
+### Configuration
+
+- train_mstnhp/configs/experiment_config_gtd_pakistan.yaml
