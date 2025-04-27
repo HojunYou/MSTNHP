@@ -13,9 +13,9 @@ data:
 
   gtd_pakistan:
     data_format: pkl
-    train_dir: ../UH/hawkes/data/gtd_pakistan/train.pkl
-    valid_dir: ../UH/hawkes/data/gtd_pakistan/dev.pkl
-    test_dir: ../UH/hawkes/data/gtd_pakistan/test.pkl
+    train_dir: ../hawkes/easytpp/examples/data/gtd_pakistan/train.pkl
+    valid_dir: ../hawkes/easytpp/examples/data/gtd_pakistan/dev.pkl
+    test_dir: ../hawkes/easytpp/examples/data/gtd_pakistan/test.pkl
     data_specs:
       num_event_types: 2
       pad_token_id: 2
@@ -46,7 +46,7 @@ STNHP_train:
     loss_integral_num_sample_per_step: 50
     spatial_npoints: 20
     n_comps: 3
-    polygon_path: '../UH/hawkes/data/gtd_pakistan/pakistan_polygon.pkl'
+    polygon_path: '../hawkes/easytpp/examples/data/gtd_pakistan/pakistan_polygon.pkl'
 #    pretrained_model_dir: ./checkpoints/75518_4377527680_230530-132355/models/saved_model
     thinning:
       num_seq: 10
