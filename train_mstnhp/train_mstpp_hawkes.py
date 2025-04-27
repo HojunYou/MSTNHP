@@ -9,8 +9,8 @@ import argparse
 
 # Parse command-line arguments for learning rate, number of epochs, and random seed
 parser = argparse.ArgumentParser()
-parser.add_argument('--lr', type=float, default='learning rate')
-parser.add_argument('-n', '--n_epochs', type=int, default='number of epochs')
+parser.add_argument('--lr', type=float, default=0.001)
+parser.add_argument('-n', '--n_epochs', type=int, default=20)
 parser.add_argument('-s', '--seed', type=int, default=0)
 args = parser.parse_args()
 
@@ -25,7 +25,7 @@ model_name = 'STNHP'
 experiment_name = model_name+'_train'
 
 # Load experiment configuration from YAML file
-config = Config.build_from_config_yaml_file('configs/experiment_config_'+dataname+'.yaml', experiment_id=experiment_name)
+config = Config.build_from_yaml_file('configs/experiment_config_'+dataname+'.yaml', experiment_id=experiment_name)
 
 # Override default training parameters with CLI inputs
 config.trainer_config.max_epoch = args.n_epochs

@@ -1,9 +1,9 @@
 import torch
 import numpy as np
-from easy_stpp.config_factory import Config
-from easy_stpp.runner import STPPRunner as Runner
-from easy_stpp.preprocess import STPPDataLoader, STPPDataset, STEventTokenizer
-from easy_stpp.preprocess.dataset import get_data_loader
+from easy_tpp.config_factory import Config
+from easy_tpp.runner import STPPRunner as Runner
+from easy_tpp.preprocess import STPPDataLoader, STPPDataset, STEventTokenizer
+from easy_tpp.preprocess.dataset import get_data_loader
 
 import matplotlib.pyplot as plt
 import os, pickle
@@ -381,7 +381,7 @@ def prediction_stnhp(model, batch, seed=0):
     return time_pred_diff, space_pred_diff, type_pred_diff, total_len
 
 
-from easy_stpp.preprocess.dataset import get_data_loader
+from easy_tpp.preprocess.dataset import get_data_loader
 
 batch_size = 13
 train_loader = get_data_loader(dataset, model_backend, tokenizer, batch_size = batch_size, shuffle=False, space=True)
