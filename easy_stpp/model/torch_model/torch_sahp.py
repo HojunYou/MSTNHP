@@ -52,11 +52,11 @@ class SAHP(TorchBaseModel):
             self.norm = nn.LayerNorm(self.d_model)
 
         # Equation (12): mu
-        self.mu = torch.empty([self.d_model, self.num_event_types], device=self.device)
+        self.mu = torch.empty([self.d_model, self.num_event_types], device=self.device, requires_grad=True) # requires_grad=True added by HJ
         # Equation (13): eta
-        self.eta = torch.empty([self.d_model, self.num_event_types], device=self.device)
+        self.eta = torch.empty([self.d_model, self.num_event_types], device=self.device, requires_grad=True) # requires_grad=True added by HJ
         # Equation (14): gamma
-        self.gamma = torch.empty([self.d_model, self.num_event_types], device=self.device)
+        self.gamma = torch.empty([self.d_model, self.num_event_types], device=self.device, requires_grad=True) # requires_grad=True added by HJ
 
         nn.init.xavier_normal_(self.mu)
         nn.init.xavier_normal_(self.eta)
@@ -77,9 +77,14 @@ class SAHP(TorchBaseModel):
         """
 
         # [batch_size, hidden_dim]
-        states = torch.matmul(encode_state, mu) + (
-                torch.matmul(encode_state, eta) - torch.matmul(encode_state, mu)) * torch.exp(
-            -torch.matmul(encode_state, gamma) * duration_t)
+        # states = torch.matmul(encode_state, mu) + (
+        #         torch.matmul(encode_state, eta) - torch.matmul(encode_state, mu)) * torch.exp(
+        #     -torch.matmul(encode_state, gamma) * duration_t)
+        enc_mu = nn.GELU()(torch.matmul(encode_state, mu))
+        enc_eta = nn.GELU()(torch.matmul(encode_state, eta))
+        enc_gamma = nn.GELU()(torch.matmul(encode_state, gamma))
+        states = enc_mu+(enc_eta-enc_mu)*torch.exp(-enc_gamma*duration_t)
+
         return states
 
     def forward(self, time_seqs, time_delta_seqs, event_seqs, attention_mask):

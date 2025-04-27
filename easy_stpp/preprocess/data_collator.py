@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Union, Optional
 
-from easy_tpp.preprocess.event_tokenizer import EventTokenizer
+from easy_tpp.preprocess.event_tokenizer import EventTokenizer, STEventTokenizer
 from easy_tpp.utils import PaddingStrategy, TruncationStrategy
 
 
@@ -33,6 +33,25 @@ class TPPDataCollator:
     max_length: Optional[int] = None
     truncation: Union[bool, str, TruncationStrategy] = False
     return_tensors: str = "pt"
+
+    def __call__(self, features, return_tensors=None):
+        if return_tensors is None:
+            return_tensors = self.return_tensors
+
+        batch = self.tokenizer.pad(
+            features,
+            padding=self.padding,
+            max_length=self.max_length,
+            truncation=self.truncation,
+            return_tensors=return_tensors,
+        )
+
+        return batch
+
+@dataclass
+class STPPDataCollator(TPPDataCollator):
+
+    tokenizer: STEventTokenizer
 
     def __call__(self, features, return_tensors=None):
         if return_tensors is None:

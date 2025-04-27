@@ -555,3 +555,145 @@ class EventTokenizer:
             type_mask[:, :, i] = pad_seqs == i
 
         return type_mask
+
+class STEventTokenizer(EventTokenizer):
+
+    padding_side: str = "right"
+    truncation_side: str = "right"
+    model_input_names: List[str] = ["time_seqs", "time_delta_seqs", "space_seqs", "space_delta_seqs",
+                                    "type_seqs", "seq_non_pad_mask", "attention_mask", "type_mask"]
+    
+    def __init__(self, config):
+
+        super().__init__(config)
+        self.space_pad_token_id = .0
+
+    def _pad(
+        self,
+        encoded_inputs: Union[Dict[str, Any], BatchEncoding],
+        max_length: Optional[int] = None,
+        padding_strategy: PaddingStrategy = PaddingStrategy.DO_NOT_PAD,
+        return_attention_mask: Optional[bool] = None,
+    ) -> dict:
+        """
+        Pad encoded inputs (on left/right and up to predefined length or max length in the batch)
+
+        Args:
+            encoded_inputs:
+                Dictionary of tokenized inputs (`List[int]`) or batch of tokenized inputs (`List[List[int]]`).
+            max_length: maximum length of the returned list and optionally padding length (see below).
+                Will truncate by taking into account the special tokens.
+            padding_strategy: PaddingStrategy to use for padding.
+
+                - PaddingStrategy.LONGEST Pad to the longest sequence in the batch
+                - PaddingStrategy.MAX_LENGTH: Pad to the max length (default)
+                - PaddingStrategy.DO_NOT_PAD: Do not pad
+                The tokenizer padding sides are defined in self.padding_side:
+
+                    - 'left': pads on the left of the sequences
+                    - 'right': pads on the right of the sequences
+            pad_to_multiple_of: (optional) Integer if set will pad the sequence to a multiple of the provided value.
+                This is especially useful to enable the use of Tensor Core on NVIDIA hardware with compute capability
+                `>= 7.5` (Volta).
+            return_attention_mask:
+                (optional) Set to False to avoid returning attention mask (default: set to model specifics)
+        """
+        # Load from model defaults
+        if return_attention_mask is None:
+            return_attention_mask = "attention_mask" in self.model_input_names
+
+        required_input = encoded_inputs[self.model_input_names[0]]
+
+        if padding_strategy == PaddingStrategy.LONGEST:
+            max_length = len(required_input)
+
+        # check whether we need to pad it
+        is_all_seq_equal_max_length = [len(seq) == max_length for seq in required_input]
+        is_all_seq_equal_max_length = np.prod(is_all_seq_equal_max_length)
+        needs_to_be_padded = padding_strategy != PaddingStrategy.DO_NOT_PAD and ~is_all_seq_equal_max_length
+
+        batch_output = dict()
+
+        if needs_to_be_padded:
+            # time_seqs
+            batch_output[self.model_input_names[0]] = self.make_pad_sequence(encoded_inputs[self.model_input_names[0]],
+                                                                             self.pad_token_id,
+                                                                             padding_side=self.padding_side,
+                                                                             max_len=max_length)
+            # time_delta seqs
+            batch_output[self.model_input_names[1]] = self.make_pad_sequence(encoded_inputs[self.model_input_names[1]],
+                                                                             self.pad_token_id,
+                                                                             padding_side=self.padding_side,
+                                                                             max_len=max_length)
+            # space_seqs
+            batch_output[self.model_input_names[2]] = self.make_pad_2dsequence(encoded_inputs[self.model_input_names[2]],
+                                                                             self.space_pad_token_id,
+                                                                             padding_side=self.padding_side,
+                                                                             max_len=max_length)
+            # space_delta seqs
+            batch_output[self.model_input_names[3]] = self.make_pad_2dsequence(encoded_inputs[self.model_input_names[3]],
+                                                                             self.space_pad_token_id,
+                                                                             padding_side=self.padding_side,
+                                                                             max_len=max_length)
+            # type_seqs
+            batch_output[self.model_input_names[4]] = self.make_pad_sequence(encoded_inputs[self.model_input_names[4]],
+                                                                             self.pad_token_id,
+                                                                             padding_side=self.padding_side,
+                                                                             max_len=max_length,
+                                                                             dtype=np.int32)
+        else:
+            batch_output = encoded_inputs
+
+        # non_pad_mask
+        # we must use type seqs to check the mask, because the pad_token_id maybe one of valid values in
+        # time seqs
+        seq_pad_mask = batch_output[self.model_input_names[4]] == self.pad_token_id
+        batch_output[self.model_input_names[5]] = ~ seq_pad_mask
+
+        if return_attention_mask:
+            # attention_mask
+            batch_output[self.model_input_names[6]] = self.make_attn_mask_for_pad_sequence(
+                batch_output[self.model_input_names[4]],
+                self.pad_token_id)
+        else:
+            batch_output[self.model_input_names[6]] = []
+
+        # type_mask
+        batch_output[self.model_input_names[7]] = self.make_type_mask_for_pad_sequence(
+            batch_output[self.model_input_names[4]])
+        
+        return batch_output
+
+    @staticmethod
+    def make_pad_2dsequence(seqs,
+                          pad_token_id,
+                          padding_side,
+                          max_len,
+                          dtype=np.float32,
+                          group_by_event_types=False):
+        """
+        Example:
+        ```python
+        seqs = [[0, 1], [3, 4, 5]]
+        pad_sequence(seqs, 100)
+        >>> [[0, 1, 100], [3, 4, 5]]
+
+        pad_sequence(seqs, 100, max_len=5)
+        >>> [[0, 1, 100, 100, 100], [3, 4, 5, 100, 100]]
+        ```
+        """
+        if not group_by_event_types:
+            if padding_side == "right":
+                # add [pad_token_id, pad_token_id] to seq (a component of seqs) whenever len(seq)< max_len
+                pad_seq = np.array([seq + [[pad_token_id, pad_token_id]]* (max_len - len(seq)) for seq in seqs], dtype=dtype)
+            else:
+                pad_seq = np.array([[[pad_token_id, pad_token_id]]* (max_len - len(seq)) + seq for seq in seqs], dtype=dtype)
+        else:
+            pad_seq = []
+            for seq in seqs:
+                if padding_side == "right":
+                    pad_seq.append(np.array([s + [[pad_token_id, pad_token_id]] * (max_len - len(s)) for s in seq], dtype=dtype))
+                else:
+                    pad_seq.append(np.array([[[pad_token_id, pad_token_id]] * (max_len - len(s)) + s for s in seqs], dtype=dtype))
+            pad_seq = np.array(pad_seq)
+        return pad_seq

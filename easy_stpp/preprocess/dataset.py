@@ -4,7 +4,7 @@ from typing import Dict
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
-from easy_tpp.preprocess.data_collator import TPPDataCollator
+from easy_tpp.preprocess.data_collator import TPPDataCollator, STPPDataCollator
 from easy_tpp.preprocess.event_tokenizer import EventTokenizer
 from easy_tpp.utils import py_assert, is_tf_available
 
@@ -105,13 +105,24 @@ class TPPDataset(Dataset):
         return TfTPPDataset(self.time_seqs, self.time_delta_seqs, self.type_seqs, **kwargs)
 
 
-def get_data_loader(dataset: TPPDataset, backend: str, tokenizer: EventTokenizer, **kwargs):
+def get_data_loader(dataset: TPPDataset, backend: str, tokenizer: EventTokenizer, space=False, **kwargs):
     use_torch = backend == 'torch'
 
     padding = True if tokenizer.padding_strategy is None else tokenizer.padding_strategy
     truncation = False if tokenizer.truncation_strategy is None else tokenizer.truncation_strategy
 
-    if use_torch:
+    if use_torch and space:
+        data_collator = STPPDataCollator(tokenizer=tokenizer,
+                                         return_tensors='pt',
+                                         max_length=tokenizer.model_max_length,
+                                         padding=padding,
+                                         truncation=truncation)
+
+        return DataLoader(dataset,
+                          collate_fn=data_collator,
+                          drop_last=False,
+                          **kwargs)
+    elif use_torch:
         data_collator = TPPDataCollator(tokenizer=tokenizer,
                                         return_tensors='pt',
                                         max_length=tokenizer.model_max_length,
@@ -120,6 +131,7 @@ def get_data_loader(dataset: TPPDataset, backend: str, tokenizer: EventTokenizer
 
         return DataLoader(dataset,
                           collate_fn=data_collator,
+                          drop_last=False,
                           **kwargs)
     else:
         # we pass to placeholders
@@ -130,3 +142,27 @@ def get_data_loader(dataset: TPPDataset, backend: str, tokenizer: EventTokenizer
                                         truncation=truncation)
 
         return dataset.to_tf_dataset(data_collator, **kwargs)
+
+
+class STPPDataset(TPPDataset):
+
+    def __init__(self, data: Dict):
+        super(STPPDataset, self).__init__(data)
+        self.space_seqs = self.data_dict['space_seqs']
+        self.space_delta_seqs = self.data_dict['space_delta_seqs']
+
+    def __getitem__(self, idx):
+        """
+
+        Args:
+            idx: iteration index
+
+        Returns:
+            dict: a dict of time_seqs, time_delta_seqs and type_seqs element
+
+        """
+        return dict(
+            {'time_seqs': self.time_seqs[idx], 'time_delta_seqs': self.time_delta_seqs[idx],
+                    'type_seqs': self.type_seqs[idx], 'space_seqs': self.space_seqs[idx],
+                    'space_delta_seqs': self.space_delta_seqs[idx]}
+        )

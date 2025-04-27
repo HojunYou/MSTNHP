@@ -137,7 +137,7 @@ class TorchBaseModel(nn.Module):
         """
         # [1, 1, n_samples]
         # sample_start = 1.0/self.loss_integral_num_sample_per_step ### HJ.
-        dtimes_ratio_sampled = torch.linspace(start=0.0, # sample_start,
+        dtimes_ratio_sampled = torch.linspace(start=0.0, # sample_start
                                               end=1.0,
                                               steps=self.loss_integral_num_sample_per_step,
                                               device=self.device)[None, None, :]

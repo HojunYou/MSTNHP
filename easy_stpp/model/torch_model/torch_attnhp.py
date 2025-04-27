@@ -151,7 +151,7 @@ class AttNHP(TorchBaseModel):
             a diagonal matrix, [batch_size, seq_len, seq_len]
         """
         # [batch_size, seq_len, seq_len]
-        layer_mask = (torch.eye(attention_mask.size(1)) < 1).unsqueeze(0).expand_as(attention_mask)
+        layer_mask = (torch.eye(attention_mask.size(1)) < 1).unsqueeze(0).expand_as(attention_mask).to(attention_mask.device)
         return layer_mask
 
     def make_combined_att_mask(self, attention_mask, layer_mask):

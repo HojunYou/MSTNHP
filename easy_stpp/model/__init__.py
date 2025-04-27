@@ -8,6 +8,7 @@ from easy_tpp.model.torch_model.torch_ode_tpp import ODETPP as TorchODETPP
 from easy_tpp.model.torch_model.torch_rmtpp import RMTPP as TorchRMTPP
 from easy_tpp.model.torch_model.torch_sahp import SAHP as TorchSAHP
 from easy_tpp.model.torch_model.torch_thp import THP as TorchTHP
+from easy_tpp.model.torch_model.torch_stnhp import STNHP as TorchSTNHP # HJ
 
 # by default, we use torch and do not install tf, therefore we ignore the import error
 try:
@@ -32,6 +33,7 @@ __all__ = ['TorchBaseModel',
            'TorchFullyNN',
            'TorchIntensityFree',
            'TorchODETPP',
+           'TorchSTNHP',
            'TfBaseModel',
            'TfNHP',
            'TfAttNHP',

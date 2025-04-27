@@ -1,7 +1,7 @@
 import logging
 from abc import abstractmethod
 
-from easy_tpp.preprocess import TPPDataLoader
+from easy_tpp.preprocess import TPPDataLoader, STPPDataLoader
 from easy_tpp.utils import Registrable, Timer, logger, get_unique_id, LogConst, get_stage, RunnerPhase
 
 

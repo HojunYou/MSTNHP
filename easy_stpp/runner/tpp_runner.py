@@ -186,7 +186,7 @@ class TPPRunner(Runner):
         if phase in [RunnerPhase.TRAIN, RunnerPhase.VALIDATE, RunnerPhase.PREDICT]:
             for batch_idx, batch in enumerate(data_loader):
                 batch_loss, batch_num_event, batch_pred, batch_label, batch_mask = \
-                    self.model_wrapper.run_batch(batch, batch_idx = batch_idx, phase=phase, accumulation_steps=2)
+                    self.model_wrapper.run_batch(batch, batch_idx = batch_idx, phase=phase, accumulation_steps=1)
 
                 total_loss += batch_loss
                 total_num_event += batch_num_event
