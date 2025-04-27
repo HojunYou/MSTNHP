@@ -1,34 +1,36 @@
+"""Simulate multivariate spatial-temporal point processes in parallel.
+
+This script allows configurable bivariate Hawkes processes, runs simulations in batch,
+and serializes event data for later analysis.
+Usage: sbatch simulate_mstpp.sh
+"""
+
 import os, sys, pickle
 sys.path.append(os.path.dirname(os.path.realpath(__name__)))
 
 import numpy as np
-import pandas as pd
-import math
 
 from mstppg import BivariateHawkesLam, BivariateSpatialTemporalPointProcess
 from stppg import (
     SeparableExponentialKernel, 
     NonseparableKernel, 
-    SeparableGaussianKernel, 
     SeparablePowerKernel,
     SeparableMixtureExponentialKernel,
     SeparableSinKernel
 )
 
-
-from utils import plot_spatio_temporal_points, plot_spatial_intensity
-
 import argparse
 
-
 def parse_args():
-    parser = argparse.ArgumentParser()
+    """Parse command-line arguments for reproducibility."""
+    parser = argparse.ArgumentParser(description="Random seed for simulation")
     parser.add_argument('--seed', '-s', type=int, default=0, metavar='N',
                         help='seed for random number (default: 0)')
     args = parser.parse_args()
     return args
 
 def main(args):
+    """Main function: set random seed, define kernels, run simulation, and save output."""
     seed_value = args.seed
     np.random.seed(seed_value)
     np.set_printoptions(suppress=True)
@@ -156,14 +158,15 @@ def main(args):
     kernel_11 = SeparableSinKernel(C=1.0, scale_t=8.0, beta_s=2.0)
 
     kernel = [kernel_00, kernel_01, kernel_10, kernel_11]
-    lam    = BivariateHawkesLam(mu, kernel, maximum=5e+2)
-    pp     = BivariateSpatialTemporalPointProcess(lam)
-    # homo_points = pp._homogeneous_poisson_sampling(T= [0,100], S=[[-1., 1.], [-1., 1.]])
+    lam    = BivariateHawkesLam(mu, kernel, maximum=5e+2)  # build Hawkes intensity model
+    pp     = BivariateSpatialTemporalPointProcess(lam)  # initialize spatial-temporal sampler
 
     t_domain = 100
+    # simulate events in parallel batches
     points, point_types, sizes = pp.generate(T=[0., t_domain], S=[[-1., 1.], [-1., 1.]], batch_size=20, verbose=True) 
     point_data = [points, point_types]
     dataname = 'bistpp_separable_zhang'
+    # save serialized event data
     with open(f'data/{dataname}_{seed_value}.pkl', 'wb') as f:
         pickle.dump(point_data, f)
 
@@ -171,4 +174,3 @@ def main(args):
 if __name__ == '__main__':
     args = parse_args()
     main(args)
-
