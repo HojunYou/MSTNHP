@@ -25,7 +25,7 @@ model_name = 'STNHP'
 experiment_name = model_name+'_train'
 
 # Load experiment configuration from YAML file
-config = Config.build_from_yaml_file('configs/experiment_config_'+dataname+'.yaml', experiment_id=experiment_name)
+config = Config.build_from_yaml_file('train_mstnhp/configs/experiment_config_'+dataname+'.yaml', experiment_id=experiment_name)
 
 # Override default training parameters with CLI inputs
 config.trainer_config.max_epoch = args.n_epochs
