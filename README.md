@@ -7,6 +7,24 @@ This repo is the simulator of spatio-temporal point processes
 - aggregate_dataset.py: aggregate the simulated point processes from simulate_mstpp_parallel.py
 - simulate_mstpp.sh: sbatch script for simulate_mstpp_parallel.py
 
-## train_mstnhp
+## train_mstnhp (previously a folder named "examples")
 This repo is the trainer of spatio-temporal point processes
+
+- configs: a directory where configuration files are stored
+- train_mstpp_hawkes.py: train STNHP Hawkes process model
+
+## easy_stpp
+This repo contains updated library for training spatio-temporal point processes from easy_tpp.
+
+- torch_wrapper.py: torch wrapper for spatio-temporal point processes
+- model/torch_model/torch_stnhp.py: torch model for spatio-temporal neural Hawkes processes.
+
+## visualization_prediction
+
+- visualization_prediction.py: visualize intensity maps from trained models and evaluate prediction results from MSTNHP and MLE.
+
+## process_realdata
+
+- process_realdata.py: process real data and save it as pickle files. (GTD dataset preprocessing starts from L297.)
+
 
