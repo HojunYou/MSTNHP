@@ -21,12 +21,14 @@ This repo contains updated library for training spatio-temporal point processes 
 - preprocess: contains updated library for handling spatio-temporal point process dataset.
 - runner: contains updated library for training spatio-temporal point processes.
 
-## visualization_prediction
+## visualization_prediction.py
 
-- visualization_prediction.py: visualize intensity maps from trained models and evaluate prediction results from MSTNHP and MLE.
+- Visualize intensity maps from trained models and evaluate prediction results from MSTNHP and MLE.
 
-## process_realdata
+## process_realdata.py
 
-- process_realdata.py: process real data and save it as pickle files. (GTD dataset preprocessing starts from L297.)
+- Process real data and save it as pickle files. (GTD dataset preprocessing starts from L297.)
 
+## easy_tpp.zip
 
+- Contains the whole updated library for training spatio-temporal point processes from easy_tpp.
