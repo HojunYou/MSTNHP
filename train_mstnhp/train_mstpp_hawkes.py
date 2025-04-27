@@ -2,14 +2,9 @@
 # Script to train STNHP Hawkes process model using MSTNHP library.
 # Usage: python train_mstpp_hawkes.py --lr 0.001 -n 100 --seed 42
 
-import torch
-import numpy as np
 from easy_tpp.config_factory import Config
 from easy_tpp.runner import STPPRunner as Runner
-from easy_tpp.preprocess import STPPDataLoader, STPPDataset, STEventTokenizer
-from easy_tpp.preprocess.dataset import get_data_loader
 
-import matplotlib.pyplot as plt
 import argparse
 
 # Parse command-line arguments for learning rate, number of epochs, and random seed
