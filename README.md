@@ -18,6 +18,8 @@ This repo contains updated library for training spatio-temporal point processes 
 
 - torch_wrapper.py: torch wrapper for spatio-temporal point processes
 - model/torch_model/torch_stnhp.py: torch model for spatio-temporal neural Hawkes processes.
+- preprocess: contains updated library for handling spatio-temporal point process dataset.
+
 
 ## visualization_prediction
 
