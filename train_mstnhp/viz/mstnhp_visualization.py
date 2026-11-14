@@ -1,3 +1,11 @@
+
+# Resolve project imports and legacy paths before loading dependencies.
+if __package__:
+    from ._paths import configure_paths
+else:
+    from _paths import configure_paths
+configure_paths()
+
 import os, argparse, pickle, numpy as np, torch, matplotlib.pyplot as plt
 
 import shapely.geometry as sg
@@ -188,7 +196,7 @@ df = pd.DataFrame({'t': st_sample[:, 0], 'x': st_sample[:, 1], 'y': st_sample[:,
 intensity_df = pd.DataFrame(sample_intensity, columns=[f'intensity{i}' for i in range(sample_intensity.shape[1])])
 df = pd.concat([df, intensity_df], axis=1)
 df_np = df.to_numpy()
-savepath = f'../Meeting/2025/250731/{dataname}/{split}/{n_comp}_{n_epochs}'
+savepath = os.path.join(args.save_root, dataname, split, f'{n_comp}_{n_epochs}')
 if n_times != 50:
     savepath = f'{savepath}_{n_times}'
 os.makedirs(savepath, exist_ok=True)

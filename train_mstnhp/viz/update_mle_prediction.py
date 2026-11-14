@@ -6,6 +6,14 @@ fitted by MLE.  Uses polygon-aware Ogata thinning and records the
 number of fall-backs (intervals where no proposal survives thinning).
 """
 
+# Resolve project imports and legacy paths before loading dependencies.
+if __package__:
+    from ._paths import configure_paths
+else:
+    from _paths import configure_paths
+configure_paths()
+
+
 #  imports
 import argparse, logging, pickle, itertools, sys
 import numpy as np

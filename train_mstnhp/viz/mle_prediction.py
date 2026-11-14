@@ -1,3 +1,11 @@
+
+# Resolve project imports and legacy paths before loading dependencies.
+if __package__:
+    from ._paths import configure_paths
+else:
+    from _paths import configure_paths
+configure_paths()
+
 import argparse, os, sys, time, logging, pickle, numpy as np, shapely.geometry as sg
 from shapely.geometry import Point, Polygon, MultiPolygon
 import torch

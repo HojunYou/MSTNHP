@@ -1,3 +1,11 @@
+
+# Resolve project imports and legacy paths before loading dependencies.
+if __package__:
+    from ._paths import configure_paths
+else:
+    from _paths import configure_paths
+configure_paths()
+
 import argparse, numpy as np, torch, pickle, shapely.geometry as sg
 from easy_tpp.config_factory import Config
 from easy_tpp.runner import STPPRunner as Runner

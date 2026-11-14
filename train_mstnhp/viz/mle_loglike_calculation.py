@@ -10,6 +10,14 @@ process fitted by MLE (polygon domain, EasyTPP splits).
 Author: <you>
 """
 
+# Resolve project imports and legacy paths before loading dependencies.
+if __package__:
+    from ._paths import configure_paths
+else:
+    from _paths import configure_paths
+configure_paths()
+
+
 import argparse, pickle, random, time, math, sys, pathlib
 import numpy as np
 import shapely.geometry as sg

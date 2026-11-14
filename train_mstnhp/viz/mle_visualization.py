@@ -1,3 +1,11 @@
+
+# Resolve project imports and legacy paths before loading dependencies.
+if __package__:
+    from ._paths import configure_paths
+else:
+    from _paths import configure_paths
+configure_paths()
+
 import os, sys, argparse, pickle, time
 import numpy as np
 import pandas as pd
