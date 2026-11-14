@@ -1,0 +1,117 @@
+# Derived from supplied checkpoint metadata. J=3 inferred from tensor shape;
+# spatial_npoints=10 is an explicit evaluation default, not recovered metadata.
+pipeline_config_id: runner_config
+data:
+  bistpp_bivariate_2:
+    train_dir: ./data/bistpp_bivariate_2/train.pkl
+    valid_dir: ./data/bistpp_bivariate_2/dev.pkl
+    test_dir: ./data/bistpp_bivariate_2/test.pkl
+    data_format: pkl
+    data_specs:
+      num_event_types: 2
+      pad_token_id: 2
+      padding_side: right
+      truncation_side: null
+      padding_strategy: null
+      truncation_strategy: null
+      max_len: null
+STNHP_train:
+  base_config:
+    stage: train
+    backend: torch
+    dataset_id: bistpp_bivariate_2
+    runner_id: std_stpp
+    model_id: STNHP
+    base_dir: ./checkpoints/
+  trainer_config:
+    seed: 2025
+    gpu: 0
+    batch_size: 16
+    max_epoch: 1000
+    shuffle: false
+    optimizer: adam
+    learning_rate: 0.0001
+    valid_freq: 1
+    use_tfb: false
+    metrics:
+    - acc
+    - rmse
+  model_config:
+    rnn_type: LSTM
+    hidden_size: 32
+    time_emb_size: 16
+    num_layers: 2
+    mc_num_sample_per_step: 20
+    sharing_param_layer: false
+    loss_integral_num_sample_per_step: 50
+    dropout_rate: 0.0
+    use_ln: false
+    thinning:
+      num_seq: 10
+      num_sample: 1
+      num_exp: 500
+      look_ahead_time: 10
+      patience_counter: 5
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+      num_step_gen: 1
+    num_event_types_pad: 3
+    num_event_types: 2
+    event_pad_index: 2
+    model_id: STNHP
+    pretrained_model_dir: null
+    gpu: 0
+    model_specs: {}
+    n_comps: 3
+    spatial_npoints: 10
+STNHP_eval:
+  base_config:
+    stage: eval
+    backend: torch
+    dataset_id: bistpp_bivariate_2
+    runner_id: std_stpp
+    model_id: STNHP
+    base_dir: ./checkpoints/
+  trainer_config:
+    seed: 2025
+    gpu: -1
+    batch_size: 16
+    max_epoch: 1000
+    shuffle: false
+    optimizer: adam
+    learning_rate: 0.0001
+    valid_freq: 1
+    use_tfb: false
+    metrics:
+    - acc
+    - rmse
+  model_config:
+    rnn_type: LSTM
+    hidden_size: 32
+    time_emb_size: 16
+    num_layers: 2
+    mc_num_sample_per_step: 20
+    sharing_param_layer: false
+    loss_integral_num_sample_per_step: 50
+    dropout_rate: 0.0
+    use_ln: false
+    thinning:
+      num_seq: 10
+      num_sample: 1
+      num_exp: 500
+      look_ahead_time: 10
+      patience_counter: 5
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+      num_step_gen: 1
+    num_event_types_pad: 3
+    num_event_types: 2
+    event_pad_index: 2
+    model_id: STNHP
+    pretrained_model_dir: ./checkpoints/biv_1-4/203845_23178315871232_250904-052227/models/saved_model
+    gpu: -1
+    model_specs: {}
+    n_comps: 3
+    spatial_npoints: 10
