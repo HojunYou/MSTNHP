@@ -556,6 +556,7 @@ class EventTokenizer:
 
         return type_mask
 
+
 class STEventTokenizer(EventTokenizer):
 
     padding_side: str = "right"

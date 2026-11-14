@@ -364,23 +364,23 @@ class STNHP(TorchBaseModel):
 
         return sampled_intensities
     
-    # def make_dspace_loss_samples(self, space_seq):
-    #     # HJ: Generates spatial grid points for numerical integration
-    #     # HJ: This function is used when we have only one spatial component (n_comps=1)
-    #     B, L, _ = space_seq.size()
-    #     space_xlower_limits = -1 + 1/self.spatial_npoints - space_seq[:,:,0]
-    #     space_xupper_limits = 1 - 1/self.spatial_npoints - space_seq[:,:,0]
-    #     space_ylower_limits = -1 + 1/self.spatial_npoints - space_seq[:,:,1]
-    #     space_yupper_limits = 1 - 1/self.spatial_npoints - space_seq[:,:,1]
-    #     x_coords = torch.linspace(0, 1, self.spatial_npoints).to(space_seq.device)
-    #     y_coords = torch.linspace(0, 1, self.spatial_npoints).to(space_seq.device)
-    #     x_coords = x_coords.view(1, 1, -1) * (space_xupper_limits[:,:,None] - space_xlower_limits[:,:,None]) + space_xlower_limits[:,:,None]
-    #     y_coords = y_coords.view(1, 1, -1) * (space_yupper_limits[:,:,None] - space_ylower_limits[:,:,None]) + space_ylower_limits[:,:,None]
-    #     x_coords = x_coords.view(-1, self.spatial_npoints)
-    #     y_coords = y_coords.view(-1, self.spatial_npoints)
-    #     sampled_dspace = torch.stack([torch.cartesian_prod(x_coord, y_coord) for x_coord, y_coord in zip(x_coords, y_coords)], dim=0).to(space_seq.device)
-    #     sampled_dspace = sampled_dspace.view(B, L, -1, 2)
-    #     return sampled_dspace
+    def make_dspace_loss_samples(self, space_seq):
+        # HJ: Generates spatial grid points for numerical integration
+        # HJ: This function is used when we have only one spatial component (n_comps=1)
+        B, L, _ = space_seq.size()
+        space_xlower_limits = -1 + 1/self.spatial_npoints - space_seq[:,:,0]
+        space_xupper_limits = 1 - 1/self.spatial_npoints - space_seq[:,:,0]
+        space_ylower_limits = -1 + 1/self.spatial_npoints - space_seq[:,:,1]
+        space_yupper_limits = 1 - 1/self.spatial_npoints - space_seq[:,:,1]
+        x_coords = torch.linspace(0, 1, self.spatial_npoints).to(space_seq.device)
+        y_coords = torch.linspace(0, 1, self.spatial_npoints).to(space_seq.device)
+        x_coords = x_coords.view(1, 1, -1) * (space_xupper_limits[:,:,None] - space_xlower_limits[:,:,None]) + space_xlower_limits[:,:,None]
+        y_coords = y_coords.view(1, 1, -1) * (space_yupper_limits[:,:,None] - space_ylower_limits[:,:,None]) + space_ylower_limits[:,:,None]
+        x_coords = x_coords.view(-1, self.spatial_npoints)
+        y_coords = y_coords.view(-1, self.spatial_npoints)
+        sampled_dspace = torch.stack([torch.cartesian_prod(x_coord, y_coord) for x_coord, y_coord in zip(x_coords, y_coords)], dim=0).to(space_seq.device)
+        sampled_dspace = sampled_dspace.view(B, L, -1, 2)
+        return sampled_dspace
     
     def make_multiple_dspace_loss_samples(self, space_seq):
         # HJ: Generates spatial grid points for numerical integration
@@ -517,17 +517,17 @@ class STNHP(TorchBaseModel):
 
         return st_samples
 
-    # def make_equal_dtimespace_samples(self, time_seqs, time_domain, space_seqs, num_sample_t = 500):
-    #     # HJ: Generates spatio-temporal grid points with equally-spaced time points for numerical integration
-    #     # HJ: This function is used when we have only one spatial component (n_comps=1)
-    #     start_times = time_seqs[:,0]
-    #     time_samples = torch.linspace(time_domain[0], time_domain[1], num_sample_t)
-    #     space_samples = self.make_dspace_loss_samples(space_seqs)
-    #     time_sample_list = [time_samples[start_time<time_samples] for start_time in start_times]
-    #     B, L, n_s, _ = space_samples.size()
+    def make_equal_dtimespace_samples(self, time_seqs, time_domain, space_seqs, num_sample_t = 500):
+        # HJ: Generates spatio-temporal grid points with equally-spaced time points for numerical integration
+        # HJ: This function is used when we have only one spatial component (n_comps=1)
+        start_times = time_seqs[:,0]
+        time_samples = torch.linspace(time_domain[0], time_domain[1], num_sample_t)
+        space_samples = self.make_dspace_loss_samples(space_seqs)
+        time_sample_list = [time_samples[start_time<time_samples] for start_time in start_times]
+        B, L, n_s, _ = space_samples.size()
             
-    #     st_sample_list = [self._make_equal_3dsamples(time_seq, time_sample, space_sample) for time_seq, time_sample, space_sample in zip(time_seqs, time_sample_list, space_samples)]
-    #     return st_sample_list
+        st_sample_list = [self._make_equal_3dsamples(time_seq, time_sample, space_sample) for time_seq, time_sample, space_sample in zip(time_seqs, time_sample_list, space_samples)]
+        return st_sample_list
     
     def make_multiple_equal_dtimespace_samples(self, time_seqs, time_domain, space_seqs, num_sample_t = 500):
         # HJ: Generates spatio-temporal grid points with equally-spaced time points for numerical integration
@@ -563,6 +563,9 @@ class STNHP(TorchBaseModel):
         num_events = torch.masked_select(event_ll, event_ll.ne(0.0)).size()[0]
 
         return event_ll, non_event_ll, num_events
+
+
+
 
     def predict_one_step_at_every_event(self, batch):
         """One-step prediction for every event in the sequence.

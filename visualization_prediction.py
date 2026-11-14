@@ -8,7 +8,6 @@ from easy_tpp.preprocess.dataset import get_data_loader
 import matplotlib.pyplot as plt
 import os, pickle
 
-
 # with open('./data/gtd_pakistan/pakistan_polygon.pkl', 'rb') as f:
 #     polygon = pickle.load(f)
 
@@ -17,10 +16,10 @@ import os, pickle
 dataname = 'gtd_pakistan'
 year_list = list(range(2008, 2021))
 config_suffix = dataname.split('_')[0]
-model_name = 'STNHP' 
-experiment_name = model_name+'_train'
+model_name = 'STNHP'
+experiment_name = model_name + '_train'
 
-config = Config.build_from_yaml_file('configs/experiment_config_'+dataname+'.yaml', experiment_id=experiment_name)
+config = Config.build_from_yaml_file('configs/experiment_config_' + dataname + '.yaml', experiment_id=experiment_name)
 ## HJ: Create a model runner from the configuration and train the model
 model_runner = Runner.build_from_config(config)
 
@@ -29,7 +28,8 @@ n_comp = model_runner.model_wrapper.model.n_comps
 n_epochs = 200
 n_times = 50
 model_name = f'{model_name}_{n_comp}_{n_times}_{n_epochs}'
-model_runner.model_wrapper.model.load_state_dict(torch.load('checkpoints/'+dataname+'/'+model_name, map_location='cpu'))
+model_runner.model_wrapper.model.load_state_dict(
+    torch.load('checkpoints/' + dataname + '/' + model_name, map_location='cpu'))
 model_runner.model_wrapper.model.eval()
 
 ## HJ: get data and model configurations
@@ -40,15 +40,15 @@ model_backend = model_runner.runner_config.base_config.backend
 split = 'train'
 data_dir = data_config.get_data_dir(split)
 data_source_type = data_dir.split('.')[-1]
-data_loader = STPPDataLoader(data_config, model_backend) # data_loader = TPPDataLoader(data_config, model_backend)
+data_loader = STPPDataLoader(data_config, model_backend)  # data_loader = TPPDataLoader(data_config, model_backend)
 data = data_loader.build_input_from_pkl(data_dir, split)
-dataset = STPPDataset(data) # dataset = TPPDataset(data)
+dataset = STPPDataset(data)  # dataset = TPPDataset(data)
 sample_size = len(dataset)
-tokenizer = STEventTokenizer(data_config.data_specs) # tokenizer = EventTokenizer(data_config.data_specs)
-batch_size = 13 # 13
+tokenizer = STEventTokenizer(data_config.data_specs)  # tokenizer = EventTokenizer(data_config.data_specs)
+batch_size = 13  # 13
 
 ## HJ: Load train dataloader
-train_loader = get_data_loader(dataset, model_backend, tokenizer, batch_size = batch_size, shuffle=False, space=True)
+train_loader = get_data_loader(dataset, model_backend, tokenizer, batch_size=batch_size, shuffle=False, space=True)
 
 ## HJ: get batch data
 batch = next(iter(train_loader))
@@ -60,8 +60,12 @@ ns = 40
 num_sample_t = 1000
 time_domain = 100
 model_runner.model_wrapper.model.spatial_npoints = ns
-st_sample_list = model_runner.model_wrapper.model.make_multiple_equal_dtimespace_samples(time_seqs, [0,time_domain], space_seqs, num_sample_t = num_sample_t)
-st_sample_location = model_runner.model_wrapper.model.make_equal_dtimespace_samples(time_seqs, [0,time_domain], torch.zeros_like(space_seqs), num_sample_t = num_sample_t)
+st_sample_list = model_runner.model_wrapper.model.make_multiple_equal_dtimespace_samples(time_seqs, [0, time_domain],
+                                                                                         space_seqs,
+                                                                                         num_sample_t=num_sample_t)
+st_sample_location = model_runner.model_wrapper.model.make_equal_dtimespace_samples(time_seqs, [0, time_domain],
+                                                                                    torch.zeros_like(space_seqs),
+                                                                                    num_sample_t=num_sample_t)
 # st_sample_location[0][28][6400:8000,0] = 26.60
 input_ = time_seqs, time_delta_seqs, space_seqs, space_delta_seqs, type_seqs, None, None, None
 hiddens_ti, decays, output_states = model_runner.model_wrapper.model.forward(input_)
@@ -70,8 +74,10 @@ hiddens_ti, decays, output_states = model_runner.model_wrapper.model.forward(inp
 data_idx = 7
 # for data_idx in range(batch_size):
 # year = year_list[data_idx]
-interval_t_samples = [st_sample_list[data_idx][i][:,0,0]-time_seqs[data_idx,i] for i in range(len(st_sample_list[data_idx]))]
-interval_s_samples = [torch.norm(st_sample_list[data_idx][i][:,:,1:], p=2, dim=-1) for i in range(len(st_sample_list[data_idx]))]
+interval_t_samples = [st_sample_list[data_idx][i][:, 0, 0] - time_seqs[data_idx, i] for i in
+                      range(len(st_sample_list[data_idx]))]
+interval_s_samples = [torch.norm(st_sample_list[data_idx][i][:, :, 1:], p=2, dim=-1) for i in
+                      range(len(st_sample_list[data_idx]))]
 
 ## HJ: Add minimum threshold to interval_t_samples to avoid peaks.
 min_thres = .01
@@ -80,28 +86,31 @@ for i, interval_t_sample in enumerate(interval_t_samples_copy):
     if not interval_t_sample.any():
         continue
     first_t_sample = interval_t_sample[0]
-    if first_t_sample<=min_thres:
-        interval_t_sample[:ns**2]+=min_thres
+    if first_t_sample <= min_thres:
+        interval_t_sample[:ns ** 2] += min_thres
         interval_t_samples[i] = interval_t_sample
         print(f"Min threshold is added to {i} th interval_t_sample.")
-    
+
 ## HJ: evaluate conditional intensity at interval_t_samples and interval_s_samples
-state_t_samples = [model_runner.model_wrapper.model.compute_states_at_sample_points(decays[data_idx:(data_idx+1), i:(i+1)], output_states[data_idx:(data_idx+1), i:(i+1)], interval_t_sample, interval_s_sample)
-                for i, (interval_t_sample, interval_s_sample) in enumerate(zip(interval_t_samples, interval_s_samples))]
+state_t_samples = [
+    model_runner.model_wrapper.model.compute_states_at_sample_points(decays[data_idx:(data_idx + 1), i:(i + 1)],
+                                                                     output_states[data_idx:(data_idx + 1), i:(i + 1)],
+                                                                     interval_t_sample, interval_s_sample)
+    for i, (interval_t_sample, interval_s_sample) in enumerate(zip(interval_t_samples, interval_s_samples))]
 
 ## HJ: get intensity samples
-lambda_t_samples = [model_runner.model_wrapper.model.layer_intensity(state_t_sample) for state_t_sample in state_t_samples]
-lambda_t_samples = [lambda_t_sample.detach().cpu().numpy()[0,0] for lambda_t_sample in lambda_t_samples]
+lambda_t_samples = [model_runner.model_wrapper.model.layer_intensity(state_t_sample) for state_t_sample in
+                    state_t_samples]
+lambda_t_samples = [lambda_t_sample.detach().cpu().numpy()[0, 0] for lambda_t_sample in lambda_t_samples]
 lambda_t_samples = np.concatenate(lambda_t_samples, axis=0)
 lambda_t_samples.shape
 
 sample_intensity = lambda_t_samples.copy()
 st_sample = torch.cat(st_sample_location[data_idx], dim=0).cpu().numpy()
 
-
 ## HJ: Compare the number of fitted points and the number of actual points
-fitted_points = sample_intensity.sum(axis=0)*time_domain/num_sample_t*(2/ns)**2
-expected_points = time_seqs[data_idx].argmax().item()+1
+fitted_points = sample_intensity.sum(axis=0) * time_domain / num_sample_t * (2 / ns) ** 2
+expected_points = time_seqs[data_idx].argmax().item() + 1
 actual_points = np.unique(type_seqs[data_idx, :expected_points].numpy(), return_counts=True)[1]
 print(fitted_points, actual_points)
 
@@ -122,80 +131,85 @@ pakistan_gdf = gpd.GeoSeries([pakistan_polygon])
 # cmap = plt.get_cmap('coolwarm')
 cmap = plt.get_cmap('viridis')
 ns = model_runner.model_wrapper.model.spatial_npoints
-ns2 = ns**2
+ns2 = ns ** 2
 # ns2 = model_runner.model_wrapper.model.inside_polygon_index.shape[0]
-df = pd.DataFrame({'t': st_sample[:,0], 'x': st_sample[:,1], 'y': st_sample[:,2]})
-intensity_df = pd.DataFrame(sample_intensity, columns = [f'intensity{i}' for i in range(sample_intensity.shape[1])])
+df = pd.DataFrame({'t': st_sample[:, 0], 'x': st_sample[:, 1], 'y': st_sample[:, 2]})
+intensity_df = pd.DataFrame(sample_intensity, columns=[f'intensity{i}' for i in range(sample_intensity.shape[1])])
 df = pd.concat([df, intensity_df], axis=1)
 df_np = df.to_numpy()
 savepath = f'../Meeting/2025/0101/{dataname}/{split}/{n_comp}_{n_epochs}'
-if n_times !=50:
+if n_times != 50:
     savepath = f'{savepath}_{n_times}'
 os.makedirs(savepath, exist_ok=True)
-max_frame = len(df_np)//ns2
+max_frame = len(df_np) // ns2
 
 seq_t = time_seqs[data_idx].numpy()
 seq_s = space_seqs[data_idx].numpy()
 point_types = type_seqs[data_idx].numpy()
 
-current_time = [seq_t[point_types==0][0], seq_t[point_types==1][0]]
-next_time = [seq_t[point_types==0][1], seq_t[point_types==1][1]]
-current_loc = [seq_s[point_types==0][0], seq_s[point_types==1][0]]
-start_is = [int(np.where(df_np[:,0]>=current_time[0])[0][0]/ns2), int(np.where(df_np[:,0]>=current_time[1])[0][0]/ns2)]
+current_time = [seq_t[point_types == 0][0], seq_t[point_types == 1][0]]
+next_time = [seq_t[point_types == 0][1], seq_t[point_types == 1][1]]
+current_loc = [seq_s[point_types == 0][0], seq_s[point_types == 1][0]]
+start_is = [int(np.where(df_np[:, 0] >= current_time[0])[0][0] / ns2),
+            int(np.where(df_np[:, 0] >= current_time[1])[0][0] / ns2)]
 
 type1_color = 'black'
 type2_color = 'yellow'
 
-for i in range(0, 2*max_frame//3):
-    fig, ax = plt.subplots(nrows = 1, ncols=2, figsize=(11, 4)) # (10,4)
-    xy_points = [Point(x, y) for x, y in zip(df_np[i*ns2:(i+1)*ns2,1], df_np[i*ns2:(i+1)*ns2,2])]
+for i in range(0, 2 * max_frame // 3):
+    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(11, 4))  # (10,4)
+    xy_points = [Point(x, y) for x, y in zip(df_np[i * ns2:(i + 1) * ns2, 1], df_np[i * ns2:(i + 1) * ns2, 2])]
     gdf_points = gpd.GeoDataFrame(geometry=xy_points, crs="EPSG:4326")
     gdf_within = gdf_points.within(pakistan_gdf.iloc[0])
-    pakistan_mask = gdf_within.values.reshape(df_np[i*ns2:(i+1)*ns2,1].shape)
-    masked_intensity0 = np.ma.masked_where(~pakistan_mask, df_np[i*ns2:(i+1)*ns2, -2])
-    masked_intensity1 = np.ma.masked_where(~pakistan_mask, df_np[i*ns2:(i+1)*ns2, -1])
-    p0 = ax[0].pcolormesh(df_np[i*ns2:(i+1)*ns2,1].reshape(ns,-1).round(4), df_np[i*ns2:(i+1)*ns2,2].reshape(ns,-1).round(4), masked_intensity0.reshape(ns, -1), shading='auto', cmap=plt.cm.coolwarm, vmin=0.0, vmax = 3.0)
-    p1 = ax[1].pcolormesh(df_np[i*ns2:(i+1)*ns2,1].reshape(ns,-1).round(4), df_np[i*ns2:(i+1)*ns2,2].reshape(ns,-1).round(4), masked_intensity1.reshape(ns, -1), shading='auto', cmap=plt.cm.coolwarm, vmin=0.0, vmax = 2.3)
+    pakistan_mask = gdf_within.values.reshape(df_np[i * ns2:(i + 1) * ns2, 1].shape)
+    masked_intensity0 = np.ma.masked_where(~pakistan_mask, df_np[i * ns2:(i + 1) * ns2, -2])
+    masked_intensity1 = np.ma.masked_where(~pakistan_mask, df_np[i * ns2:(i + 1) * ns2, -1])
+    p0 = ax[0].pcolormesh(df_np[i * ns2:(i + 1) * ns2, 1].reshape(ns, -1).round(4),
+                          df_np[i * ns2:(i + 1) * ns2, 2].reshape(ns, -1).round(4), masked_intensity0.reshape(ns, -1),
+                          shading='auto', cmap=plt.cm.coolwarm, vmin=0.0, vmax=3.0)
+    p1 = ax[1].pcolormesh(df_np[i * ns2:(i + 1) * ns2, 1].reshape(ns, -1).round(4),
+                          df_np[i * ns2:(i + 1) * ns2, 2].reshape(ns, -1).round(4), masked_intensity1.reshape(ns, -1),
+                          shading='auto', cmap=plt.cm.coolwarm, vmin=0.0, vmax=2.3)
     pakistan_gdf.boundary.plot(ax=ax[0], linewidth=1)
     pakistan_gdf.boundary.plot(ax=ax[1], linewidth=1)
 
     # p0=ax[0].pcolor(df_np[i*ns2:(i+1)*ns2,1].reshape(ns,-1).round(4), df_np[i*ns2:(i+1)*ns2,2].reshape(ns,-1).round(4), df_np[i*ns2:(i+1)*ns2, -2].reshape(ns,-1).round(4), cmap=plt.cm.seismic, vmin=0.05, vmax = 0.6)
     # p1=ax[1].pcolor(df_np[i*ns2:(i+1)*ns2,1].reshape(ns,-1).round(4), df_np[i*ns2:(i+1)*ns2,2].reshape(ns,-1).round(4), df_np[i*ns2:(i+1)*ns2, -1].reshape(ns,-1).round(4), cmap=plt.cm.seismic, vmin=0.05, vmax = 0.6)
-    
+
     ## HJ: Update current time & loc and next time & loc for plotting actual events on intensity map
-    if df_np[i*ns2,0] > next_time[0]:
+    if df_np[i * ns2, 0] > next_time[0]:
         temp_time = next_time[0]
         current_time[0] = temp_time
-        current_idx = np.where(seq_t==current_time[0])[0][0]
-        next_time[0] = seq_t[point_types==0][np.where(seq_t[point_types==0]>temp_time)[0][0]]
+        current_idx = np.where(seq_t == current_time[0])[0][0]
+        next_time[0] = seq_t[point_types == 0][np.where(seq_t[point_types == 0] > temp_time)[0][0]]
         current_loc[0] = seq_s[current_idx]
-    if df_np[i*ns2,0] > next_time[1]:
+    if df_np[i * ns2, 0] > next_time[1]:
         temp_time = next_time[1]
         current_time[1] = temp_time
-        current_idx = np.where(seq_t==current_time[1])[0][0]
-        next_time[1] = seq_t[point_types==1][np.where(seq_t[point_types==1]>temp_time)[0][0]]
+        current_idx = np.where(seq_t == current_time[1])[0][0]
+        next_time[1] = seq_t[point_types == 1][np.where(seq_t[point_types == 1] > temp_time)[0][0]]
         current_loc[1] = seq_s[current_idx]
-    
+
     ## HJ: Plot actual events on intensity map
-    if i>=start_is[0]:
+    if i >= start_is[0]:
         ax[0].scatter(current_loc[0][0], current_loc[0][1], color=type1_color, s=20)
         ax[1].scatter(current_loc[0][0], current_loc[0][1], color=type1_color, s=20)
-    if i>=start_is[1]:
+    if i >= start_is[1]:
         ax[0].scatter(current_loc[1][0], current_loc[1][1], color=type2_color, s=20)
         ax[1].scatter(current_loc[1][0], current_loc[1][1], color=type2_color, s=20)
-    
+
     ## two separate colorbars for ax[0] and ax[1]
     plt.colorbar(p0, ax=ax[0], location='right', format='%.2f')
     plt.colorbar(p1, ax=ax[1], location='right', format='%.2f')
     # plt.colorbar(p1, ax = [ax[0], ax[1]], location='right', format='%.2f')
-    plt.suptitle(f'time: {df_np[i*ns2, 0]:.2f}', fontsize=12)
+    plt.suptitle(f'time: {df_np[i * ns2, 0]:.2f}', fontsize=12)
 
     ## HJ: Rename plots for proper temporal order.
-    if i<10:
+    if i < 10:
         savename = f'000{i}'
-    elif i<100:
+    elif i < 100:
         savename = f'00{i}'
-    elif i<1000:
+    elif i < 1000:
         savename = f'0{i}'
     else:
         savename = f'{i}'
@@ -203,34 +217,32 @@ for i in range(0, 2*max_frame//3):
     plt.savefig(f'{savepath}/{year_list[data_idx]}_{savename}.jpg', bbox_inches='tight')
     plt.close()
 
-
 ## HJ: Temporal conditional intensity
 ### Temporal component comparison
 time_points = df.t.to_numpy().reshape(-1, ns2)
-intensity_0 = df.iloc[:,3].to_numpy().reshape(-1, ns2)
-intensity_1 = df.iloc[:,4].to_numpy().reshape(-1, ns2)
+intensity_0 = df.iloc[:, 3].to_numpy().reshape(-1, ns2)
+intensity_1 = df.iloc[:, 4].to_numpy().reshape(-1, ns2)
 
-unit_area = 2**2/(ns2)
+unit_area = 2 ** 2 / (ns2)
 
-temporal_intensity_0 = intensity_0.sum(axis=1)*unit_area
-temporal_intensity_1 = intensity_1.sum(axis=1)*unit_area
+temporal_intensity_0 = intensity_0.sum(axis=1) * unit_area
+temporal_intensity_1 = intensity_1.sum(axis=1) * unit_area
 
-time_df = pd.DataFrame({'t': time_points[:,0], 'intensity_0': temporal_intensity_0, 'intensity_1': temporal_intensity_1})
+time_df = pd.DataFrame(
+    {'t': time_points[:, 0], 'intensity_0': temporal_intensity_0, 'intensity_1': temporal_intensity_1})
 time_df.describe()
 
 min_value = .5
-plt.figure(figsize=(15,6))
-plt.scatter(seq_t[point_types==0], np.zeros_like(seq_t[point_types==0])+min_value, s=10)
-plt.scatter(seq_t[point_types==1], np.zeros_like(seq_t[point_types==1])+min_value, s=10)
-plt.plot(time_df.t, time_df.intensity_0, label='Type 0') #label='Taliban')
-plt.plot(time_df.t, time_df.intensity_1, label = 'Type 1') # label='Baloch')
-plt.ylim(min_value-0.1, 5.0)
+plt.figure(figsize=(15, 6))
+plt.scatter(seq_t[point_types == 0], np.zeros_like(seq_t[point_types == 0]) + min_value, s=10)
+plt.scatter(seq_t[point_types == 1], np.zeros_like(seq_t[point_types == 1]) + min_value, s=10)
+plt.plot(time_df.t, time_df.intensity_0, label='Type 0')  # label='Taliban')
+plt.plot(time_df.t, time_df.intensity_1, label='Type 1')  # label='Baloch')
+plt.ylim(min_value - 0.1, 5.0)
 plt.legend()
 plt.savefig(f'{savepath}/../{year_list[data_idx]}_time_intensity_{n_times}_{n_epochs}.jpg', bbox_inches='tight')
 # plt.savefig(f'{savepath}/../../{data_idx}_{n_comp}_{n_epochs}_time_intensity.jpg', bbox_inches='tight')
 plt.close()
-
-
 
 
 
@@ -251,13 +263,13 @@ def get_upperbound_stnhp(model, batch):
 def generate_homogeneous_points(time_delta_seq, intensity_upperbound, seed_i=0):
 
     B, L = time_delta_seq.shape
-    T=time_delta_seq+5
+    T = time_delta_seq+5
     T = T.tolist()
     S = [[-1, 1], [-1, 1]]
-    npoints      = np.array([[4*t_i for t_i in T_i] for T_i in T ])
+    npoints = np.array([[4*t_i for t_i in T_i] for T_i in T])
     poisson_lam = intensity_upperbound*npoints
     np.random.seed(seed_i)
-    N      = np.random.poisson(lam=poisson_lam)
+    N = np.random.poisson(lam=poisson_lam)
     # simulate spatial sequence and temporal sequence separately.
     homo_points = [[np.random.uniform([0, -1,-1], [T[n_i][i], 1, 1], (N[n_i][i], 3)) for i in range(L)] for n_i in range(B)]
     homo_points = [[point[point[:,0].argsort()] for point in points] for points in homo_points]
@@ -341,7 +353,7 @@ def get_prediction(predicted_intensity, intensity_upperbound, homo_points_t, hom
     return pred_time_seqs, pred_space_seqs, pred_type_seqs, total_len
 
 def prediction_stnhp(model, batch, seed=0):
-    
+
     time_seqs, time_delta_seqs, space_seqs, space_delta_seqs, type_seqs, _, _, _ = batch
     time_seq, time_delta_seq, type_seq, space_seq, space_delta_seq = time_seqs[:, :-1], time_delta_seqs[:, 1:], type_seqs[:, :-1], space_seqs[:, :-1], space_delta_seqs[:, 1:]
     B, L = time_seq.size()
@@ -363,11 +375,11 @@ def prediction_stnhp(model, batch, seed=0):
         for j in range(L):
             len_points = homo_points_t[i][j].shape[0]
             pred_sample_intensity[i,j,:len_points] = model.compute_intensities_at_sample_spacetimes(
-                time_seqs[i][None,...], 
-                time_delta_seqs[i][None,...], 
-                space_seqs[i][None,...], 
-                space_delta_seqs[i][None,...], 
-                type_seqs[i][None,...], 
+                time_seqs[i][None,...],
+                time_delta_seqs[i][None,...],
+                space_seqs[i][None,...],
+                space_delta_seqs[i][None,...],
+                type_seqs[i][None,...],
                 homo_points_t[i][j][None,None,...], space_samples[i][j][None, None,...]
             )[0,j].detach().cpu().numpy()
 

@@ -1,4 +1,6 @@
 from collections import OrderedDict
+import os
+from pathlib import Path
 
 from easy_tpp.runner.base_runner import Runner
 from easy_tpp.utils import RunnerPhase, logger, MetricsHelper, MetricsTracker, concat_element, save_pickle
@@ -124,6 +126,15 @@ class TPPRunner(Runner):
                 logger.critical(message_valid)
 
         self.model_wrapper.close_summary()
+
+        # Save the model from the final epoch
+        # CCC
+        best_ckpt_path = self.runner_config.base_config.specs['saved_model_dir']
+        models_dir = os.path.dirname(best_ckpt_path)
+        last_ckpt_path = os.path.join(models_dir, "last_epoch_model")
+        Path(models_dir).mkdir(parents=True, exist_ok=True)
+        self.model_wrapper.save(last_ckpt_path)
+        logger.critical(f"Saved last-epoch model to {last_ckpt_path}")
 
         return
 

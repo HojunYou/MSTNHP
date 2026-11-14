@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Union, Optional
 
 from easy_tpp.preprocess.event_tokenizer import EventTokenizer, STEventTokenizer
@@ -48,10 +48,10 @@ class TPPDataCollator:
 
         return batch
 
-@dataclass
+@dataclass#(kw_only=True)
 class STPPDataCollator(TPPDataCollator):
 
-    tokenizer: STEventTokenizer
+    tokenizer: Optional[STEventTokenizer] = field(default=None) #STEventTokenizer
 
     def __call__(self, features, return_tensors=None):
         if return_tensors is None:

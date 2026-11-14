@@ -48,7 +48,8 @@ class TorchModelWrapper:
             ckpt_dir (str): path for the checkpoint.
         """
 
-        self.model.load_state_dict(torch.load(ckpt_dir), strict=False)
+        #self.model.load_state_dict(torch.load(ckpt_dir), strict=False)
+        self.model.load_state_dict(torch.load(ckpt_dir, map_location=torch.device('cpu')), strict=False)
 
     def save(self, ckpt_dir):
         """Save the checkpoint for the model.

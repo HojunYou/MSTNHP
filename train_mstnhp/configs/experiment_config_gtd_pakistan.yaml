@@ -1,24 +1,35 @@
 pipeline_config_id: runner_config
 
 data:
-  gtd_thinned_pakistan_1_5:
+  mstnhp_pakistan_4:
     data_format: pkl
-    train_dir: ../UH/hawkes/data/gtd_thinned_pakistan/1_5/train.pkl
-    valid_dir: ../UH/hawkes/data/gtd_thinned_pakistan/1_5/dev.pkl
-    test_dir: ../UH/hawkes/data/gtd_thinned_pakistan/1_5/test.pkl
+    train_dir: ./data/mstnhp_pakistan_4/train.pkl
+    valid_dir: ./data/mstnhp_pakistan_4/dev.pkl
+    test_dir: ./data/mstnhp_pakistan_4/test.pkl
+    data_specs:
+      num_event_types: 4
+      pad_token_id: 4
+      padding_side: right
+
+  mstnhp_pakistan:
+    data_format: pkl
+    train_dir: ./data/mstnhp_pakistan/train.pkl
+    valid_dir: ./data/mstnhp_pakistan/dev.pkl
+    test_dir: ./data/mstnhp_pakistan/test.pkl
     data_specs:
       num_event_types: 2
       pad_token_id: 2
       padding_side: right
 
-  gtd_pakistan:
+
+  chicago_crime_2001-2022_downtown:
     data_format: pkl
-    train_dir: ../hawkes/easytpp/examples/data/gtd_pakistan/train.pkl
-    valid_dir: ../hawkes/easytpp/examples/data/gtd_pakistan/dev.pkl
-    test_dir: ../hawkes/easytpp/examples/data/gtd_pakistan/test.pkl
+    train_dir: ./data/chicago_crime_2001-2022_downtown/train.pkl
+    valid_dir: ./data/chicago_crime_2001-2022_downtown/dev.pkl
+    test_dir: ./data/chicago_crime_2001-2022_downtown/test.pkl
     data_specs:
-      num_event_types: 2
-      pad_token_id: 2
+      num_event_types: 8
+      pad_token_id: 8
       padding_side: right
 
 
@@ -26,16 +37,16 @@ STNHP_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: gtd_pakistan
+    dataset_id: mstnhp_pakistan
     runner_id: std_stpp
     model_id: STNHP # model name
     base_dir: './checkpoints/'
   trainer_config:
-    batch_size: 13
-    max_epoch: 200
+    batch_size: 10
+    max_epoch: 201
     shuffle: False
     optimizer: adam
-    learning_rate: 7.e-4
+    learning_rate: 1.e-4
     valid_freq: 1
     use_tfb: False
     metrics: [ 'acc', 'rmse' ]
@@ -44,9 +55,9 @@ STNHP_train:
   model_config:
     hidden_size: 64
     loss_integral_num_sample_per_step: 50
-    spatial_npoints: 20
+    spatial_npoints: 10
     n_comps: 3
-    polygon_path: '../hawkes/easytpp/examples/data/gtd_pakistan/pakistan_polygon.pkl'
+    polygon_path: './data/gtd_pakistan/pakistan_polygon.pkl'
 #    pretrained_model_dir: ./checkpoints/75518_4377527680_230530-132355/models/saved_model
     thinning:
       num_seq: 10
@@ -58,6 +69,48 @@ STNHP_train:
       num_samples_boundary: 5
       dtime_max: 5
       num_step_gen: 1
+
+
+
+
+STNHP_eval:
+  base_config:
+    stage: eval
+    backend: torch
+    dataset_id: mstnhp_pakistan_4
+    runner_id: std_stpp
+    model_id: STNHP # model name
+    base_dir: './checkpoints/'
+  trainer_config:
+    batch_size: 10
+    max_epoch: 500
+    shuffle: False
+    optimizer: adam
+    learning_rate: 1.e-4  #5.e-4
+    valid_freq: 1
+    use_tfb: False
+    metrics: [ 'acc', 'rmse' ]
+    seed: 2025
+    gpu: -1
+  model_config:
+    hidden_size: 32
+    loss_integral_num_sample_per_step: 50 #20
+    spatial_npoints: 10
+    n_comps: 3
+    pretrained_model_dir: ./checkpoints/246830_22981040100352_250927-112407/models/saved_model
+    #pretrained_model_dir: ./checkpoints/Nigeria_checkers/79448_22566429611008_250524-064729/models/saved_model
+    thinning:
+      num_seq: 10
+      num_sample: 100
+      num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      look_ahead_time: 10
+      patience_counter: 5 # the maximum iteration used in adaptive thinning
+      over_sample_rate: 2
+      num_samples_boundary: 5
+      dtime_max: 5
+      num_step_gen: 1
+
+
 
 
 NHP_train:

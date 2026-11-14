@@ -177,3 +177,15 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Local datasets and generated outputs
+/data/
+/train_mstnhp/data/
+/Meeting/
+/train_mstnhp/mle_diagnostics/
+
+# Local archive and editor settings
+/easy_tpp.zip
+.idea/
+
+/train_mstnhp/benchmarks/gtd_pakistan.py

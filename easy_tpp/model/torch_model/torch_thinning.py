@@ -41,7 +41,7 @@ class EventSampler(nn.Module):
             time_delta_seq (tensor): [batch_size, seq_len], time delta seqs.
             event_seq (tensor): [batch_size, seq_len], event type seqs.
             intensity_fn (fn): a function that computes the intensity.
-            compute_last_step_only (bool): wheter to compute the last time step pnly.
+            compute_last_step_only (bool): whether to compute the last time step pnly.
 
         Returns:
             tensor: [batch_size, seq_len]
