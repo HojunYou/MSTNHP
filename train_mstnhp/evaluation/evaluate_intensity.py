@@ -47,6 +47,8 @@ def main():
     parser.add_argument('--max-time-step', type=float, default=0.5)
     parser.add_argument('--time-order', type=int, default=2, help='Gauss nodes per time subinterval.')
     parser.add_argument('--threads', type=int, default=1)
+    parser.add_argument('--compare-background', action='store_true',
+                        help='Also score the known constant Biv1 background on the same histories.')
     args = parser.parse_args()
     if args.ns < 2 or args.max_time_step <= 0 or not np.isfinite(args.max_time_step) or args.time_order < 1 or args.threads < 1:
         parser.error('Invalid grid, time quadrature, or thread count.')
@@ -66,7 +68,7 @@ def main():
     checkpoint = local_path(checkpoint_value)
     data_path = local_path(args.data or dataset_config['test_dir'])
     out = local_path(args.output)
-    if any((out/name).exists() for name in ('sequence_metrics.csv', 'summary.json')):
+    if any((out/name).exists() for name in ('sequence_metrics.csv', 'summary.json', 'background.csv')):
         raise FileExistsError('Results already exist. Choose a new --output directory.')
     model, dimensions = load_model(checkpoint, experiment['model_config'], dataset_config['data_specs'])
     if dimensions['num_event_types'] != 2:
@@ -85,12 +87,15 @@ def main():
           .format(args.start_sequence, stop-1, len(sequences), args.ns, args.ns), flush=True)
     print('Window: immediately after first event through T=100, including the final interval.', flush=True)
     rows = []
+    baseline_rows = []
+    background = np.broadcast_to(np.asarray(BIV1_PARAMETERS['baseline']), (len(grid), 2))
     started = time.perf_counter()
     for index in range(args.start_sequence, stop):
         times, locations, marks = sequence_arrays(sequences[index], dimensions['num_event_types'], horizon)
         states = event_states(model, times, locations, marks)
         history_tensor = torch.as_tensor(locations, dtype=torch.float64)
         errors = IntensityErrors(dimensions['num_event_types'], spatial_weights)
+        background_errors = IntensityErrors(2, spatial_weights) if args.compare_background else None
         count = 0
         for i, left in enumerate(times):
             right = times[i+1] if i+1 < len(times) else horizon
@@ -99,6 +104,8 @@ def main():
                 fitted = fitted_intensity(model, states[i], query_time-left, distances)
                 reference = biv1_reference(query_time, grid, times, locations, marks)
                 errors.update(fitted, reference, weight)
+                if background_errors is not None:
+                    background_errors.update(background, reference, weight)
                 count += 1
         if not np.isclose(errors.duration, horizon-times[0]):
             raise AssertionError('Quadrature weights do not cover the evaluation window.')
@@ -108,6 +115,10 @@ def main():
                        window_start=float(times[0]), window_end=horizon, num_time_queries=count)
             row.update({name: float(value[k]) for name, value in metrics.items()})
             rows.append(row)
+            if background_errors is not None:
+                baseline_row = row.copy()
+                baseline_row.update({name: float(value[k]) for name, value in background_errors.results().items()})
+                baseline_rows.append(baseline_row)
             print('seq={} type={} temporal RMSE={:.6g} relL2={:.6g}; space-time RMSE={:.6g} relL2={:.6g}'
                   .format(index, k, row['temporal_rmse'], row['temporal_relative_l2'],
                           row['spacetime_rmse'], row['spacetime_relative_l2']), flush=True)
@@ -138,6 +149,11 @@ def main():
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
+    if baseline_rows:
+        with (out/'background.csv').open('w', newline='') as stream:
+            writer = csv.DictWriter(stream, fieldnames=list(baseline_rows[0]))
+            writer.writeheader()
+            writer.writerows(baseline_rows)
     (out/'summary.json').write_text(serialized+'\n')
     print('Saved results:', out, flush=True)
 

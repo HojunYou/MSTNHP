@@ -10,6 +10,14 @@ class IntensityErrors:
             raise ValueError("Spatial weights must be a positive vector.")
         self.area = float(self.weights.sum())
         self.duration = 0.0
+        self.temporal_abs = np.zeros(num_types)
+        self.spatial_abs = np.zeros(num_types)
+        self.signed = np.zeros(num_types)
+        self.true_mass = np.zeros(num_types)
+        self.temporal_max = np.zeros(num_types)
+        self.spatial_max = np.zeros(num_types)
+        self.integrated_hellinger = np.zeros(num_types)
+        self.integrated_spatial_tv = np.zeros(num_types)
         self.temporal_squared_error = np.zeros(num_types)
         self.temporal_reference_energy = np.zeros(num_types)
         self.spatial_squared_error = np.zeros(num_types)
@@ -29,6 +37,24 @@ class IntensityErrors:
             raise ValueError("Negative intensity encountered; no clipping is applied.")
         fitted_total = self.weights @ fitted
         true_total = self.weights @ reference
+        # Undefined if either field has zero spatial mass. Biv1 is strictly positive.
+        valid = (fitted_total > 0) & (true_total > 0)
+        self.integrated_spatial_tv[~valid] = np.nan
+        p = fitted[:, valid]/fitted_total[valid]
+        q = reference[:, valid]/true_total[valid]
+        difference = p - q
+        self.integrated_hellinger[~valid] = np.nan
+        self.integrated_hellinger[valid] += time_weight * np.sqrt(
+            0.5 * (self.weights @ ((np.sqrt(p) - np.sqrt(q))**2)))
+        delta = fitted - reference
+        total_delta = fitted_total - true_total
+        self.temporal_abs += time_weight * np.abs(total_delta)
+        self.spatial_abs += time_weight * (self.weights @ np.abs(delta))
+        self.signed += time_weight * total_delta
+        self.true_mass += time_weight * true_total
+        self.temporal_max = np.maximum(self.temporal_max, np.abs(total_delta))
+        self.spatial_max = np.maximum(self.spatial_max, np.abs(delta).max(axis=0))
+        self.integrated_spatial_tv[valid] += 0.5 * time_weight * (self.weights @ np.abs(difference))
         self.duration += time_weight
         self.temporal_squared_error += time_weight * (fitted_total - true_total)**2
         self.temporal_reference_energy += time_weight * true_total**2
@@ -42,7 +68,27 @@ class IntensityErrors:
             result = np.full_like(error, np.nan)
             np.divide(error, energy, out=result, where=energy > 0)
             return np.sqrt(result)
+        def relative_l1(error):
+            return np.divide(error, self.true_mass, out=np.full_like(error, np.nan),
+                             where=self.true_mass > 0)
+        volume = self.area * self.duration
         return dict(
+            temporal_mae=self.temporal_abs/self.duration,
+            temporal_mse=self.temporal_squared_error/self.duration,
+            temporal_bias=self.signed/self.duration,
+            temporal_relative_l1=relative_l1(self.temporal_abs),
+            temporal_iae=self.temporal_abs.copy(),
+            temporal_ise=self.temporal_squared_error.copy(),
+            temporal_max_abs=self.temporal_max.copy(),
+            spacetime_mae=self.spatial_abs/volume,
+            spacetime_mse=self.spatial_squared_error/volume,
+            spacetime_bias=self.signed/volume,
+            spacetime_relative_l1=relative_l1(self.spatial_abs),
+            spacetime_iae=self.spatial_abs.copy(),
+            spacetime_ise=self.spatial_squared_error.copy(),
+            spacetime_max_abs=self.spatial_max.copy(),
+            spatial_hellinger=self.integrated_hellinger/self.duration,
+            spatial_tv=self.integrated_spatial_tv/self.duration,
             temporal_rmse=np.sqrt(self.temporal_squared_error/self.duration),
             temporal_relative_l2=relative(self.temporal_squared_error, self.temporal_reference_energy),
             spacetime_rmse=np.sqrt(self.spatial_squared_error/(self.duration*self.area)),

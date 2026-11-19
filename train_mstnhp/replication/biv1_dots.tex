@@ -1,0 +1,17 @@
+% Load pgfplots in your preamble. Place the two summary CSVs beside your main .tex.
+% Call, for example, \BivDots{temporal_relative_l2} or \BivDots{spacetime_relative_l2}.
+% Positions 1,2: type 0, MSTNHP/background. Positions 3,4: type 1, same order.
+\newcommand{\BivDots}[1]{%
+  \begin{tikzpicture}
+  \begin{axis}[width=.45\linewidth,height=4.2cm,xmin=.5,xmax=4.5,
+    ymin=0,xtick={1,2,3,4},xticklabels={,,,},axis lines=left,grid=none]
+    \addplot[only marks,mark=*,mark size=.9pt,black!45]
+      table[col sep=comma,x=plot_x,y=#1]{replicate_scores.csv};
+    \addplot[only marks,mark=diamond*,mark size=2pt,black]
+      table[col sep=comma,x=x,y=#1_mean]{replicate_summary.csv};
+    % Optional SD bars (at least two replicates):
+    % \addplot[only marks,mark=none,error bars/.cd,y dir=both,y explicit]
+    %   table[col sep=comma,x=x,y=#1_mean,y error=#1_sd]{replicate_summary.csv};
+  \end{axis}
+  \end{tikzpicture}%
+}
