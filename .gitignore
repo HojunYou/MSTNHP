@@ -189,3 +189,6 @@ cython_debug/
 .idea/
 
 /train_mstnhp/benchmarks/gtd_pakistan.py
+
+# Intensity evaluation outputs
+/train_mstnhp/evaluation_results/
