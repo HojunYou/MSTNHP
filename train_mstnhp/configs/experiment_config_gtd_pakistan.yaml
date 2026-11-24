@@ -433,7 +433,7 @@ STNHP_pakistan_rev_train:
     gpu: 0
   model_config:
     hidden_size: 32
-    loss_integral_num_sample_per_step: 60
+    loss_integral_num_sample_per_step: 100
     spatial_npoints: 10
     n_comps: 3
     polygon_path: ./data/gtd_pakistan/pakistan_polygon_norm.pkl
