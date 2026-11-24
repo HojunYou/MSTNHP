@@ -1,6 +1,26 @@
 pipeline_config_id: runner_config
 
 data:
+  pakistan_rev_tnhp:
+    data_format: pkl
+    train_dir: ./data/pakistan_rev/tnhp/train.pkl
+    valid_dir: ./data/pakistan_rev/tnhp/dev.pkl
+    test_dir: ./data/pakistan_rev/tnhp/test.pkl
+    data_specs:
+      num_event_types: 4
+      pad_token_id: 4
+      padding_side: right
+      truncation_side: right
+  pakistan_rev_mstnhp:
+    data_format: pkl
+    train_dir: ./data/pakistan_rev/mstnhp/train.pkl
+    valid_dir: ./data/pakistan_rev/mstnhp/dev.pkl
+    test_dir: ./data/pakistan_rev/mstnhp/test.pkl
+    data_specs:
+      num_event_types: 4
+      pad_token_id: 4
+      padding_side: right
+
   mstnhp_pakistan_4:
     data_format: pkl
     train_dir: ./data/mstnhp_pakistan_4/train.pkl
@@ -355,3 +375,75 @@ AttNHP_gen:
       num_samples_boundary: 5
       dtime_max: 5
       num_step_gen: 10
+
+NHP_pakistan_rev_train:
+  base_config:
+    stage: train
+    backend: torch
+    dataset_id: pakistan_rev_tnhp
+    runner_id: std_tpp
+    model_id: NHP
+    base_dir: ./checkpoints/pakistan_rev/tnhp
+  trainer_config:
+    seed: 2025
+    gpu: 0
+    batch_size: 10
+    max_epoch: 5000
+    shuffle: false
+    optimizer: adam
+    learning_rate: 0.00016
+    valid_freq: 1
+    use_tfb: false
+    metrics:
+    - acc
+    - rmse
+  model_config:
+    hidden_size: 64
+    loss_integral_num_sample_per_step: 100
+    thinning:
+      num_seq: 10
+      num_sample: 1
+      num_exp: 500
+      look_ahead_time: 10
+      patience_counter: 5
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+      num_step_gen: 1
+STNHP_pakistan_rev_train:
+  base_config:
+    stage: train
+    backend: torch
+    dataset_id: pakistan_rev_mstnhp
+    runner_id: std_stpp
+    model_id: STNHP
+    base_dir: ./checkpoints/pakistan_rev/mstnhp
+  trainer_config:
+    batch_size: 10
+    max_epoch: 5000
+    shuffle: false
+    optimizer: adam
+    learning_rate: 0.0001
+    valid_freq: 1
+    use_tfb: false
+    metrics:
+    - acc
+    - rmse
+    seed: 2025
+    gpu: 0
+  model_config:
+    hidden_size: 32
+    loss_integral_num_sample_per_step: 60
+    spatial_npoints: 10
+    n_comps: 3
+    polygon_path: ./data/gtd_pakistan/pakistan_polygon_norm.pkl
+    thinning:
+      num_seq: 10
+      num_sample: 1
+      num_exp: 500
+      look_ahead_time: 10
+      patience_counter: 5
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+      num_step_gen: 1
